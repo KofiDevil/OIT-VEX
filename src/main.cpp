@@ -1,5 +1,5 @@
 #include "main.h"
-#include "config.h"
+#include "ports.h"
 #include "string.h"
 #include "iostream"
 using namespace pros;
@@ -71,8 +71,8 @@ void opcontrol()
 		float lateral = master.get_analog(ANALOG_LEFT_Y);
 		float rotational = master.get_analog(ANALOG_RIGHT_X);
 
-		rightDrive = lateral + rotational;
-		leftDrive = lateral - rotational;
+		rightDrive = lateral - rotational;
+		leftDrive = lateral + rotational;
 
 		if (master.get_digital(E_CONTROLLER_DIGITAL_R1))
 			isPressed('R');
