@@ -2,6 +2,7 @@
 #include "ports.h"
 #include "string.h"
 #include "iostream"
+#include "PID.h"
 using namespace pros;
 using namespace std;
 
@@ -11,57 +12,16 @@ void initialize()
 	pros::lcd::set_text(1, "Hello PROS User!");
 }
 
-int splitstr(string arguments, string deli = "-")
-{
-	int argument_array [5];
-
-	int start = 0;
-	int end = arguments.find(deli);
-	while (end != -1)
-	{
-		arguments.substr(start, end - start);
-		start = end + deli.size();
-		end = arguments.find(deli, start);
-
-		//argument_array[sizeof(argument_array) + 1] = arguments.substr(start, end - start);
-	}
-}
-
-void cmd(char command, string arguments)
-{
-	switch (command)
-	{
-	case 'f':
-		//allDrive.move();
-		break;
-	
-	default:
-		break;
-	}
-}
 void disabled() {}
 void competition_initialize() {}
-void autonomous() {}
-
-void isPressed(char buttonPressed)
+void autonomous() 
 {
-	switch (buttonPressed)
-	{
-	case 'R':
-		flyWheel.move(127);
-		break;
-	case 'E':
-		flyWheel.move(-127);
-		break;
-	case 'L':
-		break;
-	case 'K':
-		break;
-	case 'X':
-		break;
-	default:
-		break;
-	}
+	Task runPID(drivePID);
+	resetDriveSensors = true;
+
+	// targetPosition = 300;
+
+	delay(1000);
 }
 
 void opcontrol()
@@ -75,20 +35,20 @@ void opcontrol()
 		leftDrive = lateral + rotational;
 
 		if (master.get_digital(E_CONTROLLER_DIGITAL_R1))
-			isPressed('R');
+			flyWheel.move_voltage(12000);
 		else if (master.get_digital(E_CONTROLLER_DIGITAL_R2))
-			isPressed('E');
+			flyWheel.move_voltage(-12000);
 		else
 			flyWheel.brake();
 
-		if (master.get_digital(E_CONTROLLER_DIGITAL_L1))
-			isPressed('L');
-		else if (master.get_digital(E_CONTROLLER_DIGITAL_L2))
-			isPressed('K');
+		// if (master.get_digital(E_CONTROLLER_DIGITAL_L1))
+		// 	// ---
+		// else if (master.get_digital(E_CONTROLLER_DIGITAL_L2))
+		// 	// ---
 
-		if (master.get_digital(E_CONTROLLER_DIGITAL_X))
-			isPressed('X');
+		// if (master.get_digital(E_CONTROLLER_DIGITAL_X))
+		// 	// ---
 
-		delay(20);
+		delay(15);
 	}
 }

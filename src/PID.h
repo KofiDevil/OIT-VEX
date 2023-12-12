@@ -1,64 +1,74 @@
-class PID
-{
-public:
-    double kP = 0.0;
-    double kI = 0.0;
-    double kD = 0.0;
+#include "ports.h"
 
-private:
-    double error = 0;
-    double prevError = 0;
-    double derivative = 0;
-    double totalError = 0;
-    double prev_value;
+// -- Drivetrain
+const double kP = 1;
+const double kI = 0.00;
+const double kD = 0.00;
 
-public:
-    double output = 0;
-    bool use_I_clamp = false;
-    double I_clamp;
-    PID(double KP, double KI, double KD)
+const double turn_kP = 1;
+const double turn_kI = 0.00;
+const double turn_kD = 0.00;
+
+// -- PID Variables
+int error;
+int prevError;
+int derivative;
+int totalError;
+int targetPosition;
+
+int turn_error;
+int turn_prevError;
+int turn_derivative;
+int turn_totalError;
+int turn_targetPosition;
+
+bool enablePID = true;
+bool resetDriveSensors = false;
+
+int drivePID(){
+    while (enablePID) 
     {
-        kP = KP;
-        kI = KI;
-        kD = KD;
-    }
-    void update(double current_value, double target_value)
-    {
-        error = current_value - target_value;    // P
-        derivative = current_value - prev_value; // D
+        if (resetDriveSensors)
+        {
+            resetDriveSensors = false;
+            leftDriveA.tare_position();
+            rightDriveA.tare_position();
+        }
 
-        if (use_I_clamp)
-        { // clamped I
-            if (totalError > 0)
-            { // if positive
-                if (totalError > I_clamp)
-                { // if above clamp
-                    totalError = I_clamp;
-                }
-                else
-                {
-                    totalError += error;
-                }
-            }
-            else
-            { // if neg
-                if (totalError < -I_clamp)
-                { // if below clamp
-                    totalError = -I_clamp;
-                }
-                else
-                {
-                    totalError += error;
-                }
-            }
-        }
-        else
-        {                        // normal I
-            totalError += error; // I
-        }
-        // calculate output
-        output = (error * kP) + (derivative * kD) + (totalError * kI);
+        int leftPosition = leftDriveA.get_position();
+        int rightPosition = rightDriveA.get_position();
+
+        // -- Average Position
+        int averagePosition = (leftPosition + rightPosition)/2;
+
+        // -- Derivative
+        derivative = error - prevError;
+
+        // -- Integral
+        totalError += error;
+
+        double lateralMotion = error * kP + derivative * kD + totalError * kI;
+
+        // -- Turn difference
+        int turnDifference = leftPosition - rightPosition;
+
+        // -- Turn potential
+        turn_error = turnDifference - targetPosition;
+
+        // -- Turn derivative
+        turn_derivative = turn_error - turn_prevError;
+
+        // -- Turn integral
+        turn_totalError += turn_error;
+
+        double turnMotion = turn_error * kP + turn_derivative * kD + turn_totalError * kI;
+
+        leftDrive.move_voltage(lateralMotion + turnMotion);
+        rightDrive.move_voltage(lateralMotion - turnMotion);
+
         prevError = error;
-        prev_value = current_value;
-    } // updates PID output
-};
+        turn_prevError = turn_error;
+        delay(20);
+    }
+    return 1;
+}
